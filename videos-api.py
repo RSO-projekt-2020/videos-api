@@ -5,12 +5,12 @@ route = '/v1'
 app = Flask(__name__)
 # DB settings
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://{user}:{passwd}@{host}/{db}'.format(
-    user='user',
-    passwd='password',
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://{user}:{passwd}@{host}:{port}/{db}'.format(
+    user='dbuser',
+    passwd='postgres',
     host='0.0.0.0',
     port='5432',
-    db='database')
+    db='video-db')
 db = SQLAlchemy(app)
 
 
@@ -35,6 +35,14 @@ class Video(db.Model):
         self.created_on = ts
         self.path = path
 
+    def to_dict(self):
+        tmp = {'title': self.title,
+               'description': self.description,
+               'width': self.width,
+               'height': self.height,
+               'created_on': self.created_on}
+        return tmp
+
 
 # views
 @app.route(route + '/videos', methods=['GET'])
@@ -43,19 +51,22 @@ def list_videos():
     This method return a list of 100 latest videos posted in db
     :return:
     """
-    return make_response({'msg': 'ok'})
+    videos = Video.query.all()
+    print(videos)
+    return make_response({'msg': 'ok', 'content': [i.to_dict() for i in videos]})
 
 
-@app.route(route + 'videos/<int:video_id>', methods=['GET'])
+@app.route(route + '/videos/<int:video_id>', methods=['GET'])
 def get_video(video_id):
     """
     :param video_id: <int> you can get it by listing videos first
     :return: returns binary file containing video
     """
-    return make_response({'msg': 'ok'})
+    video = Video.query.filter_by(video_id=int(video_id)).first()
+    return make_response({'msg': 'ok', 'content': video.to_dict()})
 
 
-@app.route(route + 'videos', methods=['POST'])
+@app.route(route + '/videos', methods=['POST'])
 def upload_video():
     """
     :return: returns ok message and video_id
