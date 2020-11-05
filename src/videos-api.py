@@ -53,7 +53,7 @@ def list_videos():
     """
     videos = Video.query.all()
     print(videos)
-    return make_response({'msg': 'ok', 'content': [i.to_dict() for i in videos]})
+    return make_response({'msg': 'ok boii', 'content': [i.to_dict() for i in videos]})
 
 
 @app.route(route + '/videos/<int:video_id>', methods=['GET'])
