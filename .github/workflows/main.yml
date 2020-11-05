@@ -29,4 +29,4 @@ jobs:
         with: 
           file: ./Dockerfile
           push: true
-          tags: klemenstanic/video-api:${{ steps.time.outputs.time }}
+          tags: klemenstanic/video-api:latest
