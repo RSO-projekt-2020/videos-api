@@ -14,5 +14,5 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-          repository: rsoproject2020/video-api
+          repository: klemenstanic/video-api
           tag_with_ref: true
