@@ -6,11 +6,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: hipstergram 
+      app: hipstergram-videos
   template:
     metadata:
       labels:
-        app: hipstergram 
+        app: hipstergram-videos
     spec:
       containers:
         - image: klemenstanic/video-api:latest
@@ -39,4 +39,4 @@ spec:
       protocol: TCP
       targetPort: server
   selector:
-    app: hipstergram 
+    app: hipstergram-videos 
