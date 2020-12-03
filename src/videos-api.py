@@ -31,12 +31,12 @@ class Video(db.Model):
     created_on = db.Column(db.String)
     path = db.Column(db.String)
 
-    def __init__(self, title, description, w, h, ts, path):
+    def __init__(self, title, description, w, h, path):
         self.title = title
         self.description = description
         self.width = w
         self.height = h
-        self.created_on = ts
+        self.created_on = str(datetime.datetime.utcnow())
         self.path = path
 
     def to_dict(self):
@@ -49,7 +49,7 @@ class Video(db.Model):
 
 
 # views
-@app.route(route + '/videos', methods=['GET'])
+@app.route(route + '/videos/list', methods=['GET'])
 def list_videos():
     """
     This method return a list of 100 latest videos posted in db
@@ -57,7 +57,19 @@ def list_videos():
     """
     videos = Video.query.all()
     print(videos)
-    return make_response({'msg': 'ok boii', 'content': [i.to_dict() for i in videos]})
+    return make_response({'msg': 'ok', 'content': [i.to_dict() for i in videos]})
+
+
+@app.route(route + '/videos/list/<int:user_id>', methods=['GET'])
+def list_user_videos(user_id):
+    """
+    This method return a list of 100 latest user videos posted in db
+    :return:
+    """
+    videos = Video.query.filter_by(user_id=user_id).all()
+    print(videos)
+    return make_response({'msg': 'ok', 'content': [i.to_dict() for i in videos]})
+
 
 
 @app.route(route + '/videos/<int:video_id>', methods=['GET'])
