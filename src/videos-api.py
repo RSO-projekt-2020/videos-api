@@ -2,6 +2,12 @@ from flask import *
 from flask_sqlalchemy import SQLAlchemy
 from os import environ
 
+# logging imports
+import logging
+from logstash_async.handler import AsynchronousLogstashHandler
+from logstash_async.handler import LogstashFormatter
+
+
 route = '/v1'
 app = Flask(__name__)
 # DB settings
@@ -16,6 +22,35 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://{user}:{passwd}@{
 """
 app.config['SQLALCHEMY_DATABASE_URI'] = environ['DB_URI']
 db = SQLAlchemy(app)
+
+
+# -------------------------------------------
+# Logging setup
+# -------------------------------------------
+# Create the logger and set it's logging level
+logger = logging.getLogger("logstash")
+logger.setLevel(logging.INFO)        
+
+log_endpoint_uri = environ["LOGS_URI"]
+log_endpoint_port = environ["LOGS_PORT"]
+
+
+# Create the handler
+handler = AsynchronousLogstashHandler(
+    host=log_endpoint_uri,
+    port=log_endpoint_port, 
+    ssl_enable=True, 
+    ssl_verify=False,
+    database_path='')
+
+# Here you can specify additional formatting on your log record/message
+formatter = LogstashFormatter()
+handler.setFormatter(formatter)
+
+# Assign handler to the logger
+logger.addHandler(handler)
+
+
 
 
 # models
@@ -57,6 +92,8 @@ def list_videos():
     """
     videos = Video.query.all()
     print(videos)
+    logger.info("200 - OK")
+
     return make_response({'msg': 'ok', 'content': [i.to_dict() for i in videos]})
 
 
@@ -68,6 +105,7 @@ def list_user_videos(user_id):
     """
     videos = Video.query.filter_by(user_id=user_id).all()
     print(videos)
+    logger.info("200 - OK")
     return make_response({'msg': 'ok', 'content': [i.to_dict() for i in videos]})
 
 
@@ -79,6 +117,7 @@ def get_video(video_id):
     :return: returns binary file containing video
     """
     video = Video.query.filter_by(video_id=int(video_id)).first()
+    logger.info("200 - OK")
     return make_response({'msg': 'ok', 'content': video.to_dict()})
 
 
@@ -87,6 +126,7 @@ def upload_video():
     """
     :return: returns ok message and video_id
     """
+    logger.info("200 - OK")
     return make_response({'msg': 'ok'})
 
 
