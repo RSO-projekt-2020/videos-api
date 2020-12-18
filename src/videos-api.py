@@ -156,7 +156,7 @@ def upload_video():
         f.seek(chunk_offset)
         f.write(file_content.stream.read())
 
-    if current_chunk != total_chunks:
+    if current_chunk != chunk_count:
         # uploading
         return make_response({'msg': 'ok', 'current_chunk': current_chunk, 'chunk_count': chunk_count})
     else:
