@@ -141,13 +141,13 @@ def upload_video():
     logger.info("200 - OK")
     token = request.headers.get('Authorization')
     user_id = requests.get(app.config['USERS_API_URI'] + '/user/check', headers={'Authorization': token})
-    video_title = flask.request.form.get('title')
-    video_description = flask.request.form.get('description') 
-    file_content = flask.request.files.get('file', None)
+    video_title = request.form.get('title')
+    video_description = request.form.get('description') 
+    file_content = request.files.get('file', None)
 
-    current_chunk = int(flask.request.form.get('current_chunk'))
-    chunk_count = int(flask.request.form.get('chunk_count', None))
-    chunk_offset = int(flask.request.form.get('chunk_offset', None))
+    current_chunk = int(request.form.get('current_chunk'))
+    chunk_count = int(request.form.get('chunk_count', None))
+    chunk_offset = int(request.form.get('chunk_offset', None))
     
     filename = file_content.filename
     file_path = os.path.join(app.config['MEDIA_DIR'], filename)
