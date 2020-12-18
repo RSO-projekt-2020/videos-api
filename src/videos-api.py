@@ -1,6 +1,7 @@
 from flask import *
 from flask_sqlalchemy import SQLAlchemy
 import os
+import request
 
 # logging imports
 import logging
@@ -139,7 +140,7 @@ def upload_video():
     """
     logger.info("200 - OK")
     token = request.headers.get('Authorization')
-    user_id = request.get(app.config['USERS_API_URI'] + '/user/check', headers={'Authorization': token})
+    user_id = requests.get(app.config['USERS_API_URI'] + '/user/check', headers={'Authorization': token})
     video_title = flask.request.form.get('title')
     video_description = flask.request.form.get('description') 
     file_content = flask.request.files.get('file', None)
