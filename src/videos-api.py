@@ -142,7 +142,7 @@ def upload_video():
     """
     logger.info("200 - OK")
     token = request.headers.get('Authorization')
-    user_id = requests.get(app.config['USERS_API_URI'] + '/user/check', headers={'Authorization': token})
+    user_id = requests.get(app.config['USERS_API_URI'] + '/user/check', headers={'Authorization': token}).json()['user_id']
     video_title = request.form.get('title')
     video_description = request.form.get('description') 
     file_content = request.files.get('file', None)
