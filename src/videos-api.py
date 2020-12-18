@@ -1,7 +1,7 @@
 from flask import *
 from flask_sqlalchemy import SQLAlchemy
 import os
-import request
+import requests
 
 # logging imports
 import logging
