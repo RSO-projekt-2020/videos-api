@@ -73,7 +73,8 @@ class Video(db.Model):
     created_on = db.Column(db.String)
     path = db.Column(db.String)
 
-    def __init__(self, title, description, w, h, path):
+    def __init__(self, user_id, title, description, w, h, path):
+        self.user_id = user_id
         self.title = title
         self.description = description
         self.width = w
@@ -162,7 +163,7 @@ def upload_video():
         return make_response({'msg': 'ok', 'current_chunk': current_chunk, 'chunk_count': chunk_count})
     else:
         # finish upload
-        video = Video(video_title, video_description, 0, 0, file_path)
+        video = Video(user_id, video_title, video_description, 0, 0, file_path)
         db.session.add(video)
         db.session.commit()
         video = Video.query.filter_by(user_id = user_id, title = video_title, description = video_description).first()
