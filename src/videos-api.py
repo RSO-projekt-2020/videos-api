@@ -1,6 +1,6 @@
 from flask import *
 from flask_sqlalchemy import SQLAlchemy
-from os import environ
+import os
 
 # logging imports
 import logging
@@ -20,9 +20,14 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://{user}:{passwd}@{
     port='5432',
     db='video-db')
 """
-app.config['SQLALCHEMY_DATABASE_URI'] = environ['DB_URI']
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DB_URI']
 db = SQLAlchemy(app)
+app.config['USERS_API_URI'] = 'http://users-api:8080/v1' # environ['USERS_API_URI'] 
 
+# getting media directory ready
+app.config['MEDIA_DIR'] = './media/'
+if not os.path.exists(app.config['MEDIA_DIR']):
+    os.mkdir(app.config['MEDIA_DIR'])
 
 # -------------------------------------------
 # Logging setup
@@ -31,8 +36,8 @@ db = SQLAlchemy(app)
 logger = logging.getLogger("logstash")
 logger.setLevel(logging.INFO)        
 
-log_endpoint_uri = str(environ["LOGS_URI"]).strip()
-log_endpoint_port = int(environ["LOGS_PORT"].strip())
+log_endpoint_uri = str(os.environ["LOGS_URI"]).strip()
+log_endpoint_port = int(os.environ["LOGS_PORT"].strip())
 
 
 # Create the handler
@@ -121,13 +126,45 @@ def get_video(video_id):
     return make_response({'msg': 'ok', 'content': video.to_dict()})
 
 
+def generate_filename(filename, stringLength=20):
+    extension = filename.split('.')[-1]
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(stringLength)) + '.' + extension
+
+
 @app.route(route + '/videos', methods=['POST'])
 def upload_video():
     """
     :return: returns ok message and video_id
     """
     logger.info("200 - OK")
-    return make_response({'msg': 'ok'})
+    token = request.headers.get('Authorization')
+    user_id = request.get(app.config['USERS_API_URI'] + '/user/check', headers={'Authorization': token})
+    video_title = flask.request.form.get('title')
+    video_description = flask.request.form.get('description') 
+    file_content = flask.request.files.get('file', None)
+
+    current_chunk = int(flask.request.form.get('current_chunk'))
+    chunk_count = int(flask.request.form.get('chunk_count', None))
+    chunk_offset = int(flask.request.form.get('chunk_offset', None))
+    
+    filename = file_content.filename
+    file_path = os.path.join(app.config['MEDIA_DIR'], filename)
+
+    with open(file_path, 'ab') as f:
+        f.seek(chunk_offset)
+        f.write(file_content.stream.read())
+
+    if current_chunk != total_chunks:
+        # uploading
+        return make_response({'msg': 'ok', 'current_chunk': current_chunk, 'chunk_count': chunk_count})
+    else:
+        # finish upload
+        video = Video(video_title, video_description, 0, 0, file_path)
+        db.session.add(video)
+        db.session.commit()
+        video = Video.query.filter_by(user_id = user_id, title = video_title, description = video_description).first()
+        return make_response({'msg': 'ok', 'video_id': video.video_id})
 
 
 
