@@ -90,6 +90,10 @@ class Video(db.Model):
                'created_on': self.created_on}
         return tmp
 
+# functions
+def generate_request_id():
+    return ''.join(random.choice(string.ascii_letters) for x in range(10))
+ 
 
 # views
 @app.route(route + '/videos/list', methods=['GET'])
@@ -98,9 +102,13 @@ def list_videos():
     This method return a list of 100 latest videos posted in db
     :return:
     """
+    request_id = None
+    if 'X-Request-ID' in request.headers:
+        request_id = request.headers.get('X-Request-ID')
+    
     videos = Video.query.all()
     print(videos)
-    logger.info("200 - OK")
+    logger.info("200 - OK - id:" + request_id)
 
     return make_response({'msg': 'ok', 'content': [i.to_dict() for i in videos]})
 
@@ -111,9 +119,13 @@ def list_user_videos(user_id):
     This method return a list of 100 latest user videos posted in db
     :return:
     """
+    request_id = None
+    if 'X-Request-ID' in request.headers:
+        request_id = request.headers.get('X-Request-ID')
+
     videos = Video.query.filter_by(user_id=user_id).all()
     print(videos)
-    logger.info("200 - OK")
+    logger.info("200 - OK - id:" + request_id)
     return make_response({'msg': 'ok', 'content': [i.to_dict() for i in videos]})
 
 
@@ -140,12 +152,14 @@ def upload_video():
     """
     :return: returns ok message and video_id
     """
-    logger.info("200 - OK")
+    request_id = generate_request_id()
     token = request.headers.get('Authorization')
-    user_id = requests.get(app.config['USERS_API_URI'] + '/user/check', headers={'Authorization': token}).json()['user_id']
+    user_id = requests.get(app.config['USERS_API_URI'] + '/user/check', headers={'Authorization': token, 'X-Request-ID': request_id}).json()['user_id']
     video_title = request.form.get('title')
     video_description = request.form.get('description') 
     file_content = request.files.get('file', None)
+
+    logger.info("200 - OK - id:" + request_id)
 
     current_chunk = int(request.form.get('current_chunk'))
     chunk_count = int(request.form.get('chunk_count', None))
