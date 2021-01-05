@@ -88,6 +88,7 @@ class Video(db.Model):
 
     def to_dict(self):
         tmp = {'title': self.title,
+               'user_id': self.user_id,
                'description': self.description,
                'width': self.width,
                'height': self.height,
