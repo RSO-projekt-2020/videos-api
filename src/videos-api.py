@@ -91,7 +91,8 @@ class Video(db.Model):
                'description': self.description,
                'width': self.width,
                'height': self.height,
-               'created_on': self.created_on}
+               'created_on': self.created_on,
+               'path': self.path}
         return tmp
 
 # functions
