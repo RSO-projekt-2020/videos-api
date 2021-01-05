@@ -1,5 +1,6 @@
 from flask import *
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 import os
 import requests
 import datetime
@@ -14,6 +15,7 @@ from logstash_async.handler import LogstashFormatter
 
 route = '/v1'
 app = Flask(__name__)
+CORS(app, resources={r"/v1/*": {"origins": "*"}})
 # DB settings
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 """
