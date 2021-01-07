@@ -198,7 +198,7 @@ def get_comments(video_id):
     for comment in res['hits']['hits']:
         tmp = comment['_source']
         # we need to get user info
-        tmp['user_info'] = requests.get(app.config['USERS_API_URI'] + '/user/{}'.format(user_id), headers={'X-Request-ID': request_id}).json()
+        tmp['user_info'] = requests.get(app.config['USERS_API_URI'] + '/user/{}'.format(tmp['user_id']), headers={'X-Request-ID': request_id}).json()
         data.append(tmp)
     return make_response({'msg': 'ok', 'content': data})
 
