@@ -189,8 +189,17 @@ def upload_video():
 
 @app.route(route + '/videos/<int:video_id>/comments', methods=['GET'])
 def get_comments(video_id):
+    request_id = None
+    if 'X-Request-ID' in request.headers:
+        request_id = request.headers.get('X-Request-ID')
     res = es.search(index="comments", body={"query": {"match": {'video_id': video_id}}})
-    data = [x['_source'] for x in res['hits']['hits']]
+    #data = [x['_source'] for x in res['hits']['hits']]
+    data = []
+    for comment in res['hits']['hits']:
+        tmp = comment['_source']
+        # we need to get user info
+        tmp['user_info'] = requests.get(app.config['USERS_API_URI'] + '/user/{}'.format(user_id), headers={'X-Request-ID': request_id}).json()
+        data.append(tmp)
     return make_response({'msg': 'ok', 'content': data})
 
 
