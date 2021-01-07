@@ -6,6 +6,8 @@ import requests
 import datetime
 import string
 import random
+from elasticsearch import Elasticsearch
+
 
 # logging imports
 import logging
@@ -18,17 +20,13 @@ app = Flask(__name__)
 CORS(app, resources={r"/v1/*": {"origins": "*"}})
 # DB settings
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-"""
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://{user}:{passwd}@{host}:{port}/{db}'.format(
-    user='dbuser',
-    passwd='postgres',
-    host='0.0.0.0',
-    port='5432',
-    db='video-db')
-"""
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DB_URI']
-db = SQLAlchemy(app)
 app.config['USERS_API_URI'] = 'http://users-api:8080/v1' # environ['USERS_API_URI'] 
+app.config['ES_CLOUD_ID'] = os.environ['ES_CLOUD_ID']
+app.config['ES_PASSWD'] = os.environ['ES_PASSWD']
+
+db = SQLAlchemy(app)
+es = Elasticsearch(cloud_id=app.config['ES_CLOUD_ID'], http_auth=('elastic', app.config['ES_PASSWD']))
 
 # getting media directory ready
 app.config['MEDIA_DIR'] = './media/'
@@ -60,8 +58,6 @@ handler.setFormatter(formatter)
 
 # Assign handler to the logger
 logger.addHandler(handler)
-
-
 
 
 # models
@@ -189,6 +185,29 @@ def upload_video():
         video = Video.query.filter_by(user_id = user_id, title = video_title, description = video_description).first()
         return make_response({'msg': 'ok', 'video_id': video.video_id})
 
+
+@app.route(route + '/videos/<int:video_id>/comments', methods=['GET'])
+def get_comments(video_id):
+    res = es.search(index="comments", body={"query": {"match_all": {}}})
+    data = [x['_source'] for x in res['hits']['hits']]
+    return make_response({'msg': 'ok', 'content': data})
+
+
+@app.route(route + '/videos/<int:video_id>/comments', methods=['POST'])
+def post_comment(video_id):
+    request_id = generate_request_id()
+    token = request.headers.get('Authorization')
+    user_id = requests.get(app.config['USERS_API_URI'] + '/user/check', headers={'Authorization': token, 'X-Request-ID': request_id}).json()['user_id']
+    
+    comment_data = {
+        'user_id': user_id,
+        'video_id': video_id,
+        'comment': request.json['comment'],
+        'created_on': str(datetime.datetime.utcnow())
+    }
+
+    res = es.index(index='comments', body=comment_data)
+    return make_response({'msg': 'ok'})
 
 
 if __name__ == '__main__':
