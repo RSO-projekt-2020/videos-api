@@ -111,7 +111,7 @@ def list_videos():
     
     videos = Video.query.all()
     print(videos)
-    logger.info("200 - OK - id:" + request_id)
+    logger.info("[videos-api][{}] listing latest videos".format(request_id))
 
     return make_response({'msg': 'ok', 'content': [i.to_dict() for i in videos]})
 
@@ -128,7 +128,7 @@ def list_user_videos(user_id):
 
     videos = Video.query.filter_by(user_id=user_id).all()
     print(videos)
-    logger.info("200 - OK - id:" + request_id)
+    logger.info("[videos-api][{}] listing user videos".format(request_id))
     return make_response({'msg': 'ok', 'content': [i.to_dict() for i in videos]})
 
 
@@ -140,7 +140,7 @@ def get_video(video_id):
     :return: returns binary file containing video
     """
     video = Video.query.filter_by(video_id=int(video_id)).first()
-    logger.info("200 - OK")
+    logger.info("[users-api] serving video")
     return make_response({'msg': 'ok', 'content': video.to_dict()})
 
 
@@ -156,13 +156,14 @@ def upload_video():
     :return: returns ok message and video_id
     """
     request_id = generate_request_id()
+
     token = request.headers.get('Authorization')
+    logger.info("[videos-api][{}] we are getting a new video".format(request_id))
+
     user_id = requests.get(app.config['USERS_API_URI'] + '/user/check', headers={'Authorization': token, 'X-Request-ID': request_id}).json()['user_id']
     video_title = request.form.get('title')
     video_description = request.form.get('description') 
     file_content = request.files.get('file', None)
-
-    logger.info("200 - OK - id:" + request_id)
 
     current_chunk = int(request.form.get('current_chunk'))
     chunk_count = int(request.form.get('chunk_count', None))
@@ -192,6 +193,8 @@ def get_comments(video_id):
     request_id = None
     if 'X-Request-ID' in request.headers:
         request_id = request.headers.get('X-Request-ID')
+    logger.info("[videos-api][{}] getting video comments".format(request_id))
+    
     res = es.search(index="comments", body={"query": {"match": {'video_id': video_id}}})
     #data = [x['_source'] for x in res['hits']['hits']]
     data = []
@@ -207,6 +210,7 @@ def get_comments(video_id):
 def post_comment(video_id):
     request_id = generate_request_id()
     token = request.headers.get('Authorization')
+    logger.info("[videos-api][{}] we have one new comment".format(request_id))
     user_id = requests.get(app.config['USERS_API_URI'] + '/user/check', headers={'Authorization': token, 'X-Request-ID': request_id}).json()['user_id']
     
     comment_data = {
