@@ -189,7 +189,7 @@ def upload_video():
 
 @app.route(route + '/videos/<int:video_id>/comments', methods=['GET'])
 def get_comments(video_id):
-    res = es.search(index="comments", body={"query": {"match_all": {}}})
+    res = es.search(index="comments", body={"query": {"match": {'video_id': video_id}}})
     data = [x['_source'] for x in res['hits']['hits']]
     return make_response({'msg': 'ok', 'content': data})
 
