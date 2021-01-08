@@ -4,4 +4,3 @@ psycopg2==2.8.6
 python-logstash-async==2.2.0
 requests==2.22.0
 flask_cors
-elasticsearch>=7.0.0,<8.0.0

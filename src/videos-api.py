@@ -6,8 +6,6 @@ import requests
 import datetime
 import string
 import random
-from elasticsearch import Elasticsearch
-
 
 # logging imports
 import logging
@@ -22,11 +20,8 @@ CORS(app, resources={r"/v1/*": {"origins": "*"}})
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DB_URI']
 app.config['USERS_API_URI'] = 'http://users-api:8080/v1' # environ['USERS_API_URI'] 
-app.config['ES_CLOUD_ID'] = os.environ['ES_CLOUD_ID'].strip()
-app.config['ES_PASSWD'] = os.environ['ES_PASSWD'].strip()
 
 db = SQLAlchemy(app)
-es = Elasticsearch(cloud_id=app.config['ES_CLOUD_ID'], http_auth=('elastic', app.config['ES_PASSWD']))
 
 # getting media directory ready
 app.config['MEDIA_DIR'] = './media/'
@@ -186,43 +181,6 @@ def upload_video():
         db.session.commit()
         video = Video.query.filter_by(user_id = user_id, title = video_title, description = video_description).first()
         return make_response({'msg': 'ok', 'video_id': video.video_id})
-
-
-@app.route(route + '/videos/<int:video_id>/comments', methods=['GET'])
-def get_comments(video_id):
-    request_id = None
-    if 'X-Request-ID' in request.headers:
-        request_id = request.headers.get('X-Request-ID')
-    logger.info("[videos-api][{}] getting video comments".format(request_id))
-    
-    res = es.search(index="comments", body={"query": {"match": {'video_id': video_id}}})
-    #data = [x['_source'] for x in res['hits']['hits']]
-    data = []
-    for comment in res['hits']['hits']:
-        tmp = comment['_source']
-        # we need to get user info
-        tmp['user_info'] = requests.get(app.config['USERS_API_URI'] + '/user/{}'.format(tmp['user_id']), headers={'X-Request-ID': request_id}).json()
-        data.append(tmp)
-    return make_response({'msg': 'ok', 'content': data})
-
-
-@app.route(route + '/videos/<int:video_id>/comments', methods=['POST'])
-def post_comment(video_id):
-    request_id = generate_request_id()
-    token = request.headers.get('Authorization')
-    logger.info("[videos-api][{}] we have one new comment".format(request_id))
-    user_id = requests.get(app.config['USERS_API_URI'] + '/user/check', headers={'Authorization': token, 'X-Request-ID': request_id}).json()['user_id']
-    
-    comment_data = {
-        'user_id': user_id,
-        'video_id': video_id,
-        'comment': request.json['comment'],
-        'created_on': str(datetime.datetime.utcnow())
-    }
-
-    res = es.index(index='comments', body=comment_data)
-    return make_response({'msg': 'ok'})
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
