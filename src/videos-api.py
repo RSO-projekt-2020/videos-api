@@ -67,6 +67,9 @@ class Video(db.Model):
     height = db.Column(db.String)
     created_on = db.Column(db.String)
     path = db.Column(db.String)
+    label_1 = db.Column(db.String)
+    label_2 = db.Column(db.String)
+    label_3 = db.Column(db.String)
 
     def __init__(self, user_id, title, description, w, h, path):
         self.user_id = user_id
@@ -85,7 +88,10 @@ class Video(db.Model):
                'height': self.height,
                'created_on': self.created_on,
                'path': self.path,
-               'video_id': self.video_id}
+               'video_id': self.video_id,
+               'label_1': self.label_1,
+               'label_2': self.label_2,
+               'label_3': self.label_3}
         return tmp
 
 # functions
