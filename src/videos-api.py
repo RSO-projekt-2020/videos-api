@@ -20,6 +20,7 @@ CORS(app, resources={r"/v1/*": {"origins": "*"}})
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DB_URI']
 app.config['USERS_API_URI'] = 'http://users-api:8080/v1' # environ['USERS_API_URI'] 
+app.config['IMAGE_LABELING_API_URI'] = 'http://image-labeling-api:8080/v1'
 
 db = SQLAlchemy(app)
 
@@ -162,31 +163,43 @@ def upload_video():
     logger.info("[videos-api][{}] we are getting a new video".format(request_id))
 
     user_id = requests.get(app.config['USERS_API_URI'] + '/user/check', headers={'Authorization': token, 'X-Request-ID': request_id}).json()['user_id']
-    video_title = request.form.get('title')
-    video_description = request.form.get('description') 
-    file_content = request.files.get('file', None)
+    video_title = request.json['video_title']
+    video_description = request.json['video_description'] 
+    file_path = request.json['video_path']
 
-    current_chunk = int(request.form.get('current_chunk'))
-    chunk_count = int(request.form.get('chunk_count', None))
-    chunk_offset = int(request.form.get('chunk_offset', None))
+    video = Video(user_id, video_title, video_description, 0, 0, file_path)
+    db.session.add(video);
+    db.session.commit();
+    video = Video.query.filter_by(user_id = user_id, title = video_title, description = video_description).first()
+
+    #Call image-labeling-api
+    resp = requests.get(app.config['IMAGE_LABELING_API_URI'] + '/image-labeling/ +' video.video_id, headers={'X-Request-ID': request_id})
+
+    return make_response({'msg': 'ok', 'video_id': video.video_id})
+
+    # file_content = request.files.get('file', None)
+
+    # current_chunk = int(request.form.get('current_chunk'))
+    # chunk_count = int(request.form.get('chunk_count', None))
+    # chunk_offset = int(request.form.get('chunk_offset', None))
     
-    filename = file_content.filename
-    file_path = os.path.join(app.config['MEDIA_DIR'], filename)
+    # filename = file_content.filename
+    # file_path = os.path.join(app.config['MEDIA_DIR'], filename)
 
-    with open(file_path, 'ab') as f:
-        f.seek(chunk_offset)
-        f.write(file_content.stream.read())
+    # with open(file_path, 'ab') as f:
+    #     f.seek(chunk_offset)
+    #     f.write(file_content.stream.read())
 
-    if current_chunk != chunk_count:
-        # uploading
-        return make_response({'msg': 'ok', 'current_chunk': current_chunk, 'chunk_count': chunk_count})
-    else:
-        # finish upload
-        video = Video(user_id, video_title, video_description, 0, 0, file_path)
-        db.session.add(video)
-        db.session.commit()
-        video = Video.query.filter_by(user_id = user_id, title = video_title, description = video_description).first()
-        return make_response({'msg': 'ok', 'video_id': video.video_id})
+    # if current_chunk != chunk_count:
+    #     # uploading
+    #     return make_response({'msg': 'ok', 'current_chunk': current_chunk, 'chunk_count': chunk_count})
+    # else:
+    #     # finish upload
+    #     video = Video(user_id, video_title, video_description, 0, 0, file_path)
+    #     db.session.add(video)
+    #     db.session.commit()
+    #     video = Video.query.filter_by(user_id = user_id, title = video_title, description = video_description).first()
+    #     return make_response({'msg': 'ok', 'video_id': video.video_id})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
