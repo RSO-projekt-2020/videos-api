@@ -173,7 +173,7 @@ def upload_video():
     video = Video.query.filter_by(user_id = user_id, title = video_title, description = video_description).first()
 
     #Call image-labeling-api
-    resp = requests.get(app.config['IMAGE_LABELING_API_URI'] + '/image-labeling/' + video.video_id, headers={'X-Request-ID': request_id})
+    resp = requests.get(app.config['IMAGE_LABELING_API_URI'] + '/image-labeling/' + str(video.video_id), headers={'X-Request-ID': request_id})
 
     return make_response({'msg': 'ok', 'video_id': video.video_id})
 
